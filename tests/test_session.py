@@ -166,6 +166,46 @@ class TestSessionLifecycle:
 # ---------------------------------------------------------------------------
 
 
+class TestThaSnowflakeOpenSession:
+    def _sf(self):
+        return ThaSnowflake(account="myorg", quiet_connect=False)
+
+    def test_returns_session_instance(self):
+        sf = self._sf()
+        mock_conn = MagicMock()
+        with patch("snowflake.connector.connect", return_value=mock_conn):
+            sess = sf.open_session()
+        assert isinstance(sess, Session)
+        sess.close()
+
+    def test_session_can_query(self):
+        sf = self._sf()
+        mock_conn = _mock_conn(rows=[{"N": 1}])
+        with patch("snowflake.connector.connect", return_value=mock_conn):
+            sess = sf.open_session()
+        result = sess.query("SELECT 1 AS n")
+        assert result == {"rows": [{"N": 1}], "rowcount": 1, "status": None}
+        sess.close()
+
+    def test_close_closes_connection(self):
+        sf = self._sf()
+        mock_conn = MagicMock()
+        with patch("snowflake.connector.connect", return_value=mock_conn):
+            sess = sf.open_session()
+        sess.close()
+        mock_conn.close.assert_called_once()
+
+    def test_passes_context_to_connection(self):
+        sf = self._sf()
+        mock_conn = MagicMock()
+        with patch("snowflake.connector.connect", return_value=mock_conn) as mock_connect:
+            sess = sf.open_session(role="ANALYST", warehouse="WH")
+            sess.close()
+        call_kwargs = mock_connect.call_args.kwargs
+        assert call_kwargs.get("role") == "ANALYST"
+        assert call_kwargs.get("warehouse") == "WH"
+
+
 class TestThaSnowflakeSession:
     def _sf(self):
         return ThaSnowflake(account="myorg", quiet_connect=False)

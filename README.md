@@ -107,6 +107,14 @@ with sf.session(role="ANALYST", warehouse="WH") as sess:
     # one connection opened, two queries run, connection closed on exit
 ```
 
+For inline use without a `with` block, use `open_session()` — caller is responsible for closing:
+
+```python
+sess = sf.open_session(role="ANALYST", warehouse="WH")
+result = sess.query("SELECT * FROM users")
+sess.close()
+```
+
 Pass `accumulate=True` to append rows across queries into `sess.rows`:
 
 ```python
@@ -179,7 +187,8 @@ sf = ThaSnowflake(
 | `build_connect_kwargs(*, role, warehouse, database, schema)` | `dict` | Return kwargs that would be passed to `snowflake.connector.connect` — useful for debugging |
 | `connect(**kwargs)` | `SnowflakeConnection` | Open and return a raw connection |
 | `connection(**kwargs)` | context manager | Open a connection, close it on exit |
-| `session(*, accumulate=False, **kwargs)` | context manager → `Session` | Open a `Session` backed by one connection |
+| `session(*, accumulate=False, **kwargs)` | context manager → `Session` | Open a `Session` backed by one connection; closes on exit |
+| `open_session(*, accumulate=False, **kwargs)` | `Session` | Open and return a `Session` without a context manager; caller must call `sess.close()` |
 | `query(sql=None, *, file=None, params, conn, role, warehouse, database, schema)` | `dict` | Execute a SELECT; pass `sql` or `file=` (not both); returns `{"rows", "rowcount", "status"}` |
 | `list_profiles()` | `list[str]` | Profile names from `connections_file` (requires Mode 2) |
 
@@ -202,6 +211,10 @@ names = list_profiles("~/connections.toml")  # ["default", "prod", "dev"]
 ```
 
 Supports the same formats as Mode 2: `.toml`, `.ini`, `.cfg`, `.json`.
+
+## Scope
+
+`tha-snowflake-runner` is read-only by design — `query()` and `stream()` only. Write operations (INSERT, UPDATE, DELETE, MERGE, DDL) are intentionally not supported; use the raw connector directly for those.
 
 ## Alternatives
 

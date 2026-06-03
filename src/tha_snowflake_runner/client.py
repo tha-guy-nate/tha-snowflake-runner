@@ -253,6 +253,15 @@ class ThaSnowflake:
         with self.connection(**kwargs) as conn:
             yield Session(conn, status_cb=self.status_cb, accumulate=accumulate)
 
+    def open_session(self, *, accumulate: bool = False, **kwargs: Any) -> Session:
+        """Open and return a Session without a context manager.
+
+        Caller is responsible for calling sess.close() when done.
+        Use sf.session() instead if you want automatic cleanup on exit.
+        """
+        conn = self.connect(**kwargs)
+        return Session(conn, status_cb=self.status_cb, accumulate=accumulate)
+
     def query(
         self,
         sql: str | None = None,
