@@ -73,9 +73,7 @@ class TestBuildConnectKwargsNative:
 # build_connect_kwargs — mode 2: custom TOML file
 # ---------------------------------------------------------------------------
 
-_TOML_FLAT = (
-    b"[default]\naccount = 'myorg'\nuser = 'a@b.com'\nauthenticator = 'externalbrowser'\n"
-)
+_TOML_FLAT = b"[default]\naccount = 'myorg'\nuser = 'a@b.com'\nauthenticator = 'externalbrowser'\n"
 _TOML_NESTED = b"[connections.default]\naccount = 'myorg'\nuser = 'a@b.com'\n"
 _TOML_MULTI = b"[default]\naccount = 'dev'\n\n[prod]\naccount = 'prodorg'\n"
 
@@ -93,8 +91,10 @@ def _file_patches(read_data: bytes | str):
 
     @contextlib.contextmanager
     def _ctx():
-        with patch("os.path.exists", return_value=True), \
-                patch("builtins.open", mock_open(read_data=read_data)):
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("builtins.open", mock_open(read_data=read_data)),
+        ):
             yield
 
     return _ctx()
@@ -149,9 +149,7 @@ class TestBuildConnectKwargsFile:
 
 class TestBuildConnectKwargsIni:
     def _sf(self, name="default", **kwargs):
-        return ThaSnowflake(
-            connections_file="~/my_connections.ini", connection_name=name, **kwargs
-        )
+        return ThaSnowflake(connections_file="~/my_connections.ini", connection_name=name, **kwargs)
 
     def test_reads_flat_profile(self):
         sf = self._sf()
@@ -305,9 +303,7 @@ class TestBuildConnectKwargsInline:
         assert "authenticator" not in kwargs
 
     def test_keypair_auth_expands_path(self):
-        sf = ThaSnowflake(
-            account="myorg", user="svc@b.com", private_key_file="~/keys/rsa_key.p8"
-        )
+        sf = ThaSnowflake(account="myorg", user="svc@b.com", private_key_file="~/keys/rsa_key.p8")
         kwargs = sf.build_connect_kwargs()
         assert kwargs["private_key_file"] == os.path.expanduser("~/keys/rsa_key.p8")
         assert "private_key_file_pwd" not in kwargs
@@ -444,23 +440,23 @@ class TestConnectRetry:
     def test_retry_delay_passed_to_sleep(self):
         sf = self._sf(retry_connect=1, retry_on=(OSError,), retry_delay=2.5)
         mock_connect = MagicMock(side_effect=[OSError("fail"), MagicMock()])
-        with patch("snowflake.connector.connect", mock_connect), \
-                patch("time.sleep") as mock_sleep:
+        with patch("snowflake.connector.connect", mock_connect), patch("time.sleep") as mock_sleep:
             sf.connect()
         mock_sleep.assert_called_once_with(2.5)
 
     def test_no_sleep_when_delay_is_zero(self):
         sf = self._sf(retry_connect=1, retry_on=(OSError,), retry_delay=0.0)
         mock_connect = MagicMock(side_effect=[OSError("fail"), MagicMock()])
-        with patch("snowflake.connector.connect", mock_connect), \
-                patch("time.sleep") as mock_sleep:
+        with patch("snowflake.connector.connect", mock_connect), patch("time.sleep") as mock_sleep:
             sf.connect()
         mock_sleep.assert_not_called()
 
     def test_status_cb_called_on_each_failed_attempt(self):
         messages: list[str] = []
         sf = self._sf(
-            retry_connect=2, retry_on=(OSError,), retry_delay=0.0,
+            retry_connect=2,
+            retry_on=(OSError,),
+            retry_delay=0.0,
             status_cb=messages.append,
         )
         mock_connect = MagicMock(side_effect=[OSError("f1"), OSError("f2"), MagicMock()])
@@ -522,6 +518,7 @@ class TestQuery:
 
     def test_query_error_sets_status(self):
         import snowflake.connector.errors
+
         sf = ThaSnowflake()
         mock_conn = MagicMock()
         mock_conn.cursor.return_value.execute.side_effect = snowflake.connector.errors.Error(
@@ -550,8 +547,10 @@ class TestQueryFile:
     def test_file_sql_executed(self):
         sf = ThaSnowflake()
         mock_conn = self._conn_with_rows([{"N": 1}])
-        with patch("os.path.exists", return_value=True), \
-                patch("builtins.open", mock_open(read_data="SELECT 1 AS n")):
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("builtins.open", mock_open(read_data="SELECT 1 AS n")),
+        ):
             result = sf.query(file="queries/count.sql", conn=mock_conn)
         assert result == {"rows": [{"N": 1}], "rowcount": 1, "status": None}
         mock_conn.cursor.return_value.execute.assert_called_once_with("SELECT 1 AS n", ())
@@ -559,8 +558,10 @@ class TestQueryFile:
     def test_file_sql_stripped(self):
         sf = ThaSnowflake()
         mock_conn = self._conn_with_rows([])
-        with patch("os.path.exists", return_value=True), \
-                patch("builtins.open", mock_open(read_data="\n  SELECT 1  \n")):
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("builtins.open", mock_open(read_data="\n  SELECT 1  \n")),
+        ):
             sf.query(file="q.sql", conn=mock_conn)
         mock_conn.cursor.return_value.execute.assert_called_once_with("SELECT 1", ())
 

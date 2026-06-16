@@ -82,10 +82,9 @@ class TestSessionQuery:
 
     def test_query_error_returns_status_string(self):
         import snowflake.connector.errors
+
         conn = _mock_conn()
-        conn.cursor.return_value.execute.side_effect = snowflake.connector.errors.Error(
-            "bad query"
-        )
+        conn.cursor.return_value.execute.side_effect = snowflake.connector.errors.Error("bad query")
         sess = Session(conn)
         result = sess.query("BAD SQL")
         assert result == {"rows": [], "rowcount": 0, "status": "bad query"}
@@ -103,8 +102,10 @@ class TestSessionQuery:
     def test_file_sql_executed(self):
         conn = _mock_conn(rows=[{"N": 1}])
         sess = Session(conn)
-        with patch("os.path.exists", return_value=True), \
-                patch("builtins.open", mock_open(read_data="SELECT 1 AS n")):
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("builtins.open", mock_open(read_data="SELECT 1 AS n")),
+        ):
             result = sess.query(file="queries/count.sql")
         assert result == {"rows": [{"N": 1}], "rowcount": 1, "status": None}
         conn.cursor.return_value.execute.assert_called_once_with("SELECT 1 AS n", ())
@@ -112,8 +113,10 @@ class TestSessionQuery:
     def test_file_sql_stripped(self):
         conn = _mock_conn(rows=[])
         sess = Session(conn)
-        with patch("os.path.exists", return_value=True), \
-                patch("builtins.open", mock_open(read_data="\n  SELECT 1  \n")):
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("builtins.open", mock_open(read_data="\n  SELECT 1  \n")),
+        ):
             sess.query(file="q.sql")
         conn.cursor.return_value.execute.assert_called_once_with("SELECT 1", ())
 

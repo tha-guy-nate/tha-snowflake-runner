@@ -241,9 +241,7 @@ class ThaSnowflake:
                 pass
 
     @contextlib.contextmanager
-    def session(
-        self, *, accumulate: bool = False, **kwargs: Any
-    ) -> Generator[Session, None, None]:
+    def session(self, *, accumulate: bool = False, **kwargs: Any) -> Generator[Session, None, None]:
         """Open a persistent Session for multiple queries on one connection.
 
         Pass accumulate=True to append self.rows across query() calls instead of replacing.
@@ -311,4 +309,3 @@ class ThaSnowflake:
             result = _run(c)
             self.rows = result
             return result
-

@@ -39,6 +39,7 @@ def _load_all_profiles(path: str) -> dict[str, dict[str, Any]]:
                 profiles[k] = v
     elif fmt == "ini":
         import configparser
+
         with open(path) as f:
             content = f.read()
         cp = configparser.ConfigParser()
@@ -47,6 +48,7 @@ def _load_all_profiles(path: str) -> dict[str, dict[str, Any]]:
             profiles[section] = dict(cp[section])
     elif fmt == "json":
         import json
+
         with open(path) as f:
             data = json.load(f)
         connections = data.get("connections")
