@@ -8,7 +8,7 @@ from tha_snowflake_runner.errors import SnowflakeError
 try:
     import tomllib
 except ImportError:  # Python 3.10
-    import tomli as tomllib  # type: ignore[no-redef]
+    import tomli as tomllib
 
 
 def _detect_format(path: str) -> str:

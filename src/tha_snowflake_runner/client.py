@@ -97,11 +97,11 @@ class ThaSnowflake:
         self._local = threading.local()
 
     @property
-    def rows(self) -> dict | None:
+    def rows(self) -> dict[str, Any] | None:
         return getattr(self._local, "rows", None)
 
     @rows.setter
-    def rows(self, value: dict | None) -> None:
+    def rows(self, value: dict[str, Any] | None) -> None:
         self._local.rows = value
 
     def _status(self, message: str) -> None:
@@ -216,7 +216,7 @@ class ThaSnowflake:
             try:
                 with ctx:
                     return snowflake.connector.connect(**connect_kwargs)
-            except self.retry_on as exc:  # type: ignore[misc]
+            except self.retry_on as exc:
                 last_exc = exc
                 if attempt < self.retry_connect:
                     self._status(
@@ -265,13 +265,13 @@ class ThaSnowflake:
         sql: str | None = None,
         *,
         file: str | None = None,
-        params: tuple | list | None = None,
+        params: tuple[Any, ...] | list[Any] | None = None,
         conn: Any = None,
         role: str | None = None,
         warehouse: str | None = None,
         database: str | None = None,
         schema: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Execute a SELECT and return {"rows": list[dict], "rowcount": int, "status": None|str}.
 
         Pass sql as an inline string or file= as a path to a .sql file (not both).
@@ -289,11 +289,11 @@ class ThaSnowflake:
         if sql is None:
             raise SnowflakeError("Provide either sql or file")
 
-        def _run(c: Any) -> dict:
+        def _run(c: Any) -> dict[str, Any]:
             cursor = c.cursor(snowflake.connector.DictCursor)
             try:
                 cursor.execute(sql, params or ())
-                rows: list[dict] = cursor.fetchall()
+                rows: list[dict[str, Any]] = cursor.fetchall()
                 return {"rows": rows, "rowcount": len(rows), "status": None}
             except snowflake.connector.errors.Error as exc:
                 return {"rows": [], "rowcount": 0, "status": str(exc)}
