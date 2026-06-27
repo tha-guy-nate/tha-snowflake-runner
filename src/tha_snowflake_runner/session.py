@@ -22,7 +22,7 @@ class Session:
             results = list(pool.map(worker, queries))
     """
 
-    rows: dict | None = None
+    rows: dict[str, Any] | None = None
 
     def __init__(self, conn: Any, *, status_cb: Any = None, accumulate: bool = False) -> None:
         self._conn = conn
@@ -38,8 +38,8 @@ class Session:
         sql: str | None = None,
         *,
         file: str | None = None,
-        params: tuple | list | None = None,
-    ) -> dict:
+        params: tuple[Any, ...] | list[Any] | None = None,
+    ) -> dict[str, Any]:
         """Execute a SELECT and return {"rows": list[dict], "rowcount": int, "status": None|str}.
 
         Pass sql as an inline string or file= as a path to a .sql file (not both).
@@ -57,7 +57,7 @@ class Session:
         if sql is None:
             raise SnowflakeError("Provide either sql or file")
 
-        rows: list[dict] = []
+        rows: list[dict[str, Any]] = []
         status: str | None = None
         cursor = self._conn.cursor(snowflake.connector.DictCursor)
         try:
@@ -67,7 +67,7 @@ class Session:
             status = str(exc)
         finally:
             cursor.close()
-        result: dict = {"rows": rows, "rowcount": len(rows), "status": status}
+        result: dict[str, Any] = {"rows": rows, "rowcount": len(rows), "status": status}
         if status is not None:
             return result
         if self._accumulate and self.rows is not None:

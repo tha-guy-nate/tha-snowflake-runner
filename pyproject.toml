@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tha-snowflake-runner"
-version = "0.1.3"
+version = "0.1.4"
 description = "A Tabular Helper API library that wraps snowflake-connector-python with typed connection management, multi-format profile support, and a normalized query return shape."
 readme = "README.md"
 license = { text = "MIT" }
@@ -50,6 +50,7 @@ target-version = "py310"
 select = ["E", "F", "I", "B", "UP", "RUF"]
 
 [tool.mypy]
+strict = true
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
