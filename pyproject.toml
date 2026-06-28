@@ -38,6 +38,7 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/tha-guy-nate/tha-snowflake-runner"
 Issues = "https://github.com/tha-guy-nate/tha-snowflake-runner/issues"
+Changelog = "https://github.com/tha-guy-nate/tha-snowflake-runner/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tha_snowflake_runner"]
