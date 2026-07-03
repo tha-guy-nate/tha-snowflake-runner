@@ -73,6 +73,8 @@ class TestBuildConnectKwargsNative:
 # build_connect_kwargs — mode 2: custom TOML file
 # ---------------------------------------------------------------------------
 
+_TEST_PEM_STR = "-----BEGIN PRIVATE KEY-----\nfake\n-----END PRIVATE KEY-----\n"
+
 _TOML_FLAT = b"[default]\naccount = 'myorg'\nuser = 'a@b.com'\nauthenticator = 'externalbrowser'\n"
 _TOML_NESTED = b"[connections.default]\naccount = 'myorg'\nuser = 'a@b.com'\n"
 _TOML_MULTI = b"[default]\naccount = 'dev'\n\n[prod]\naccount = 'prodorg'\n"
@@ -317,6 +319,38 @@ class TestBuildConnectKwargsInline:
         )
         kwargs = sf.build_connect_kwargs()
         assert kwargs["private_key_file_pwd"] == "mypass"
+
+    def test_private_key_pem_str(self):
+        sf = ThaSnowflake(account="myorg", user="svc@b.com", private_key=_TEST_PEM_STR)
+        with patch(
+            "tha_snowflake_runner.client.resolve_private_key", return_value=b"DERBYTES"
+        ) as mock_resolve:
+            kwargs = sf.build_connect_kwargs()
+        mock_resolve.assert_called_once_with(_TEST_PEM_STR, None)
+        assert kwargs["private_key"] == b"DERBYTES"
+        assert "private_key_file" not in kwargs
+
+    def test_private_key_with_passphrase_forwarded_to_resolver(self):
+        sf = ThaSnowflake(
+            account="myorg",
+            user="svc@b.com",
+            private_key=_TEST_PEM_STR,
+            private_key_passphrase="mypass",
+        )
+        with patch(
+            "tha_snowflake_runner.client.resolve_private_key", return_value=b"DERBYTES"
+        ) as mock_resolve:
+            sf.build_connect_kwargs()
+        mock_resolve.assert_called_once_with(_TEST_PEM_STR, "mypass")
+
+    def test_private_key_and_private_key_file_mutually_exclusive(self):
+        sf = ThaSnowflake(
+            account="myorg",
+            private_key_file="~/key.p8",
+            private_key=_TEST_PEM_STR,
+        )
+        with pytest.raises(SnowflakeError, match="not both"):
+            sf.build_connect_kwargs()
 
     def test_oauth_token_auth(self):
         sf = ThaSnowflake(account="myorg", authenticator="oauth", token="tok123")

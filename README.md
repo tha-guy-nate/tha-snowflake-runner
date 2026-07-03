@@ -72,12 +72,21 @@ sf = ThaSnowflake(account="myorg", user="me@example.com", authenticator="externa
 # Password (service accounts)
 sf = ThaSnowflake(account="myorg", user="svc@example.com", password="secret")
 
-# Key-pair
+# Key-pair — from a file
 sf = ThaSnowflake(
     account="myorg",
     user="svc@example.com",
     private_key_file="~/keys/rsa_key.p8",
     private_key_passphrase="mypass",
+)
+
+# Key-pair — from a PEM string or DER bytes (e.g. pulled from a secrets manager)
+# private_key_file and private_key are mutually exclusive.
+sf = ThaSnowflake(
+    account="myorg",
+    user="svc@example.com",
+    private_key=os.environ["SNOWFLAKE_PRIVATE_KEY"],  # PEM text
+    private_key_passphrase="mypass",  # only used if the PEM is encrypted; ignored for DER
 )
 
 # OAuth token
@@ -168,8 +177,9 @@ sf = ThaSnowflake(
 | `user` | `str \| None` | `None` | Username (Mode 3) |
 | `authenticator` | `str \| None` | `None` | `"externalbrowser"`, `"oauth"`, etc. |
 | `password` | `str \| None` | `None` | Password auth (Mode 3) |
-| `private_key_file` | `str \| None` | `None` | Path to `.p8` key file; `~` is expanded |
-| `private_key_passphrase` | `str \| None` | `None` | Passphrase for encrypted private key |
+| `private_key_file` | `str \| None` | `None` | Path to `.p8` key file; `~` is expanded. Mutually exclusive with `private_key` |
+| `private_key` | `bytes \| str \| None` | `None` | PEM string/bytes or raw DER bytes. `str` is always PEM; `bytes` is auto-detected. DER is assumed pre-decrypted. Mutually exclusive with `private_key_file` |
+| `private_key_passphrase` | `str \| None` | `None` | Passphrase for an encrypted private key. Applies to `private_key_file` and PEM-format `private_key` only — ignored for DER |
 | `token` | `str \| None` | `None` | OAuth token (Mode 3) |
 | `role` | `str \| None` | `None` | Default Snowflake role |
 | `warehouse` | `str \| None` | `None` | Default warehouse |

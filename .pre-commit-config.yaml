@@ -8,6 +8,7 @@ repos:
       - id: check-json
       - id: check-added-large-files
       - id: detect-private-key
+        exclude: ^tests/
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.17
