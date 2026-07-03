@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-03
+### Added
+- Python 3.13 and 3.14 classifiers and CI support.
+- PR template (What/Why/How + Test Plan sections), part of a cross-repo consistency sweep.
+
 ## [0.2.0] - 2026-07-03
 ### Added
 - `private_key` param for key-pair auth — accepts a PEM string, PEM bytes, or raw DER bytes directly, so callers can inject a key from a secrets manager without writing it to disk. Mutually exclusive with `private_key_file`. DER bytes are assumed pre-decrypted; `private_key_passphrase` only applies to the PEM path.
