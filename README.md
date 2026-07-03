@@ -1,6 +1,7 @@
 # tha-snowflake-runner
 
 [![CI](https://github.com/tha-guy-nate/tha-snowflake-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/tha-guy-nate/tha-snowflake-runner/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/tha-guy-nate/tha-snowflake-runner/graph/badge.svg)](https://codecov.io/gh/tha-guy-nate/tha-snowflake-runner)
 [![PyPI](https://img.shields.io/pypi/v/tha-snowflake-runner)](https://pypi.org/project/tha-snowflake-runner/)
 [![Python](https://img.shields.io/pypi/pyversions/tha-snowflake-runner)](https://pypi.org/project/tha-snowflake-runner/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
