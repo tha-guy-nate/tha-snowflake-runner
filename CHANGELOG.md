@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-03
+### Added
+- `private_key` param for key-pair auth — accepts a PEM string, PEM bytes, or raw DER bytes directly, so callers can inject a key from a secrets manager without writing it to disk. Mutually exclusive with `private_key_file`. DER bytes are assumed pre-decrypted; `private_key_passphrase` only applies to the PEM path.
+### Changed
+- Dropped the `pyarrow` dependency — never used by this library (only relevant to the connector's `[pandas]` extra, which `tha-snowflake-runner` doesn't use).
+- Added `cryptography` as an explicit dependency (previously relied on transitively via `snowflake-connector-python`) — needed directly for the new `private_key` PEM/DER handling.
+
 ## [0.1.4] - 2026-06-27
 ### Added
 - mypy strict mode enabled.

@@ -8,6 +8,7 @@ from typing import Any
 
 import snowflake.connector
 
+from tha_snowflake_runner._keys import resolve_private_key
 from tha_snowflake_runner.errors import SnowflakeError
 from tha_snowflake_runner.profiles import _load_all_profiles
 from tha_snowflake_runner.session import Session
@@ -44,6 +45,8 @@ class ThaSnowflake:
           externalbrowser:  authenticator="externalbrowser"  (Okta SSO, human accounts)
           password:         password="secret"                (service accounts)
           key-pair:         private_key_file="~/key.p8", private_key_passphrase="..."
+                             or private_key=<PEM str/bytes or raw DER bytes> (mutually
+                             exclusive with private_key_file; DER is assumed pre-decrypted)
           oauth token:      authenticator="oauth", token="..."
 
     In all modes, role/warehouse/database/schema passed here (or to connect()) override
@@ -60,6 +63,7 @@ class ThaSnowflake:
         authenticator: str | None = None,
         password: str | None = None,
         private_key_file: str | None = None,
+        private_key: bytes | str | None = None,
         private_key_passphrase: str | None = None,
         token: str | None = None,
         role: str | None = None,
@@ -80,6 +84,7 @@ class ThaSnowflake:
         self.authenticator = authenticator
         self.password = password
         self.private_key_file = private_key_file
+        self.private_key = private_key
         self.private_key_passphrase = private_key_passphrase
         self.token = token
         self.role = role
@@ -169,6 +174,9 @@ class ThaSnowflake:
         schema: str | None = None,
     ) -> dict[str, Any]:
         """Return kwargs for snowflake.connector.connect. Useful for debugging."""
+        if self.private_key_file is not None and self.private_key is not None:
+            raise SnowflakeError("Provide private_key_file or private_key, not both")
+
         role, warehouse, database, schema = self._resolve_context(role, warehouse, database, schema)
 
         kwargs: dict[str, Any] = {}
@@ -185,6 +193,10 @@ class ThaSnowflake:
                 kwargs["private_key_file"] = os.path.expanduser(self.private_key_file)
                 if self.private_key_passphrase is not None:
                     kwargs["private_key_file_pwd"] = self.private_key_passphrase
+            elif self.private_key is not None:
+                kwargs["private_key"] = resolve_private_key(
+                    self.private_key, self.private_key_passphrase
+                )
             if self.token is not None:
                 kwargs["token"] = self.token
         elif self.connections_file is not None:
