@@ -67,5 +67,10 @@ testpaths = ["tests"]
 known_first_party = ["tha_snowflake_runner"]
 optional_dependencies_dev_groups = ["dev"]
 
+[tool.deptry.per_rule_ignores]
+# tomllib is stdlib on 3.11+ and backed by the declared `tomli` dependency on 3.10 (see profiles.py) —
+# deptry can't resolve that the two are the same thing, so DEP001 false-positives on tomllib alone.
+DEP001 = ["tomllib"]
+
 [tool.coverage.run]
 source = ["src"]
