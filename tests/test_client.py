@@ -1,13 +1,32 @@
 import os
+import sys
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
 from tha_snowflake_runner import SnowflakeError, ThaSnowflake
+from tha_snowflake_runner.client import _suppress_stdout
 
 # ---------------------------------------------------------------------------
 # Context resolution / set_context
 # ---------------------------------------------------------------------------
+
+
+class TestSuppressStdout:
+    def test_suppresses_and_restores_stdout(self, capsys):
+        original_stdout = sys.stdout
+        with _suppress_stdout():
+            print("should not appear")
+            assert sys.stdout is not original_stdout
+        assert sys.stdout is original_stdout
+        assert capsys.readouterr().out == ""
+
+    def test_restores_stdout_on_exception(self):
+        original_stdout = sys.stdout
+        with pytest.raises(RuntimeError):
+            with _suppress_stdout():
+                raise RuntimeError("boom")
+        assert sys.stdout is original_stdout
 
 
 class TestContextResolution:
@@ -31,6 +50,12 @@ class TestContextResolution:
         sf.set_context(database=None)
         assert sf.database == "DB"  # unchanged
 
+    def test_set_context_updates_warehouse_and_schema(self):
+        sf = ThaSnowflake(warehouse="W", schema="SCH")
+        sf.set_context(warehouse="W2", schema="SCH2")
+        assert sf.warehouse == "W2"
+        assert sf.schema == "SCH2"
+
 
 # ---------------------------------------------------------------------------
 # build_connect_kwargs — mode 1: native connections.toml
@@ -53,6 +78,12 @@ class TestBuildConnectKwargsNative:
         kwargs = sf.build_connect_kwargs()
         assert kwargs["role"] == "ANALYST"
         assert kwargs["warehouse"] == "WH"
+
+    def test_runtime_database_schema_included(self):
+        sf = ThaSnowflake(database="DB", schema="SCH")
+        kwargs = sf.build_connect_kwargs()
+        assert kwargs["database"] == "DB"
+        assert kwargs["schema"] == "SCH"
 
     def test_none_context_omitted(self):
         sf = ThaSnowflake()
@@ -510,6 +541,16 @@ class TestQuery:
         mock_conn = MagicMock()
         mock_conn.cursor.return_value.fetchall.return_value = rows
         return mock_conn
+
+    def test_without_conn_opens_and_closes_own_connection(self):
+        sf = ThaSnowflake(account="myorg", user="a@b.com", quiet_connect=False)
+        rows = [{"ID": "u1", "NAME": "Alice"}]
+        mock_conn = self._conn_with_rows(rows)
+        with patch("snowflake.connector.connect", return_value=mock_conn):
+            result = sf.query("SELECT id, name FROM users")
+        assert result == {"rows": rows, "rowcount": 1, "status": None}
+        assert sf.rows == result
+        mock_conn.close.assert_called_once()
 
     def test_returns_dict_envelope(self):
         sf = ThaSnowflake()

@@ -19,6 +19,23 @@ def _mock_conn(rows=None, rowcount=0):
 
 
 # ---------------------------------------------------------------------------
+# Session._status
+# ---------------------------------------------------------------------------
+
+
+class TestSessionStatus:
+    def test_calls_status_cb_when_set(self):
+        status_cb = MagicMock()
+        sess = Session(_mock_conn(), status_cb=status_cb)
+        sess._status("hello")
+        status_cb.assert_called_once_with("hello")
+
+    def test_noop_when_status_cb_is_none(self):
+        sess = Session(_mock_conn())
+        sess._status("hello")  # should not raise
+
+
+# ---------------------------------------------------------------------------
 # Session.query
 # ---------------------------------------------------------------------------
 
