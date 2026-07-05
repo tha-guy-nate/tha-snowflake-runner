@@ -5,7 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/v/tha-snowflake-runner)](https://pypi.org/project/tha-snowflake-runner/)
 [![Python](https://img.shields.io/pypi/pyversions/tha-snowflake-runner)](https://pypi.org/project/tha-snowflake-runner/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
-[![size](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftha-snowflake-runner%2Fjson&label=size&query=%24.urls%5B0%5D.size&suffix=%20B)](https://pypi.org/project/tha-snowflake-runner/#files)
+[![wheel size](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftha-snowflake-runner%2Fjson&label=wheel%20size&query=%24.urls%5B0%5D.size&suffix=%20B)](https://pypi.org/project/tha-snowflake-runner/#files)
 
 A Tabular Helper API library that wraps snowflake-connector-python with typed connection management, multi-format profile support, and a normalized query return shape.
 
