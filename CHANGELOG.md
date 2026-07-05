@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-07-04
+### Fixed
+- Added missing `data` to `pyproject.toml` `keywords` to align with the GitHub topic list.
+
 ## [0.2.2] - 2026-07-04
 ### Fixed
 - Test coverage gaps (93% → 100%): added tests for `_suppress_stdout`, `set_context`'s warehouse/schema branches, `build_connect_kwargs`'s database/schema inclusion, and `query()`'s own-connection path (previously always bypassed via an injected `conn=`) in `client.py`; a new `test_profiles.py` covering the standalone `list_profiles()` function and `_load_all_profiles`'s non-dict-key skip (previously untested — only the `ThaSnowflake.list_profiles()` method wrapper had tests); and `Session._status` in `session.py` (defined but never covered).
