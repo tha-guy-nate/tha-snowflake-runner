@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tha-snowflake-runner"
-version = "0.2.2"
+version = "0.2.3"
 description = "A Tabular Helper API library that wraps snowflake-connector-python with typed connection management, multi-format profile support, and a normalized query return shape."
 readme = "README.md"
 license = { text = "MIT" }
@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-keywords = ["snowflake", "connector", "sql", "warehouse", "tabular", "helper"]
+keywords = ["snowflake", "connector", "sql", "warehouse", "data", "tabular", "helper"]
 dependencies = [
     "snowflake-connector-python>=3.6",
     "cryptography>=48.0.1",
