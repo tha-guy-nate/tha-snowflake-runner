@@ -539,7 +539,7 @@ class TestConnectRetry:
 class TestQuery:
     def _conn_with_rows(self, rows):
         mock_conn = MagicMock()
-        mock_conn.cursor.return_value.fetchall.return_value = rows
+        mock_conn.cursor.return_value.__iter__.return_value = iter(rows)
         return mock_conn
 
     def test_without_conn_opens_and_closes_own_connection(self):
@@ -578,7 +578,7 @@ class TestQuery:
     def test_params_passed_to_cursor(self):
         sf = ThaSnowflake()
         mock_conn = MagicMock()
-        mock_conn.cursor.return_value.fetchall.return_value = []
+        mock_conn.cursor.return_value.__iter__.return_value = iter([])
         sf.query("SELECT * FROM t WHERE id = %s", params=("u1",), conn=mock_conn)
         mock_conn.cursor.return_value.execute.assert_called_once_with(
             "SELECT * FROM t WHERE id = %s", ("u1",)
@@ -587,7 +587,7 @@ class TestQuery:
     def test_cursor_closed_after_query(self):
         sf = ThaSnowflake()
         mock_conn = MagicMock()
-        mock_conn.cursor.return_value.fetchall.return_value = []
+        mock_conn.cursor.return_value.__iter__.return_value = iter([])
         sf.query("SELECT 1", conn=mock_conn)
         mock_conn.cursor.return_value.close.assert_called_once()
 
@@ -612,11 +612,47 @@ class TestQuery:
         with pytest.raises(SnowflakeError, match="not both"):
             sf.query("SELECT 1", file="q.sql")
 
+    def test_desc_none_uses_default_label(self):
+        sf = ThaSnowflake()
+        with patch("tha_snowflake_runner.client.tqdm") as mock_tqdm:
+            mock_tqdm.side_effect = lambda it, **kwargs: it
+            sf.query("SELECT 1", conn=self._conn_with_rows([{"N": 1}]))
+        assert mock_tqdm.call_args.kwargs["desc"] == "Getting data from Snowflake"
+        assert mock_tqdm.call_args.kwargs["disable"] is False
+
+    def test_desc_set_prefixes_default_label(self):
+        sf = ThaSnowflake()
+        with patch("tha_snowflake_runner.client.tqdm") as mock_tqdm:
+            mock_tqdm.side_effect = lambda it, **kwargs: it
+            sf.query("SELECT 1", desc="Step 1 of 7", conn=self._conn_with_rows([{"N": 1}]))
+        assert mock_tqdm.call_args.kwargs["desc"] == "Step 1 of 7: Getting data from Snowflake"
+        assert mock_tqdm.call_args.kwargs["disable"] is False
+
+    def test_show_progress_false_disables_even_with_desc(self):
+        sf = ThaSnowflake()
+        with patch("tha_snowflake_runner.client.tqdm") as mock_tqdm:
+            mock_tqdm.side_effect = lambda it, **kwargs: it
+            sf.query(
+                "SELECT 1",
+                desc="Fetching",
+                show_progress=False,
+                conn=self._conn_with_rows([{"N": 1}]),
+            )
+        assert mock_tqdm.call_args.kwargs["disable"] is True
+
+    def test_no_result_set_skips_fetch(self):
+        sf = ThaSnowflake()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value.description = None
+        result = sf.query("SELECT 1", conn=mock_conn)
+        assert result == {"rows": [], "rowcount": 0, "status": None}
+        mock_conn.cursor.return_value.__iter__.assert_not_called()
+
 
 class TestQueryFile:
     def _conn_with_rows(self, rows):
         mock_conn = MagicMock()
-        mock_conn.cursor.return_value.fetchall.return_value = rows
+        mock_conn.cursor.return_value.__iter__.return_value = iter(rows)
         return mock_conn
 
     def test_file_sql_executed(self):

@@ -7,8 +7,10 @@ from collections.abc import Generator
 from typing import Any
 
 import snowflake.connector
+from tqdm import tqdm
 
 from tha_snowflake_runner._keys import resolve_private_key
+from tha_snowflake_runner._progress import tqdm_ncols
 from tha_snowflake_runner.errors import SnowflakeError
 from tha_snowflake_runner.profiles import _load_all_profiles
 from tha_snowflake_runner.session import Session
@@ -283,11 +285,15 @@ class ThaSnowflake:
         warehouse: str | None = None,
         database: str | None = None,
         schema: str | None = None,
+        desc: str | None = None,
+        show_progress: bool = True,
     ) -> dict[str, Any]:
         """Execute a SELECT and return {"rows": list[dict], "rowcount": int, "status": None|str}.
 
         Pass sql as an inline string or file= as a path to a .sql file (not both).
         Pass conn to reuse an existing connection; otherwise a new one is opened and closed.
+        Prints a tqdm progress bar while fetching rows; pass desc to prefix it with a step
+        label (e.g. desc="Step 1 of 7"), or show_progress=False to suppress it entirely.
         Sets self.rows.
         """
         if sql is not None and file is not None:
@@ -305,7 +311,20 @@ class ThaSnowflake:
             cursor = c.cursor(snowflake.connector.DictCursor)
             try:
                 cursor.execute(sql, params or ())
-                rows: list[dict[str, Any]] = cursor.fetchall()
+                fetching = "Getting data from Snowflake"
+                label = f"{desc}: {fetching}" if desc is not None else fetching
+                rows: list[dict[str, Any]] = (
+                    list(
+                        tqdm(
+                            cursor,
+                            desc=label,
+                            ncols=tqdm_ncols(),
+                            disable=not show_progress,
+                        )
+                    )
+                    if cursor.description
+                    else []
+                )
                 return {"rows": rows, "rowcount": len(rows), "status": None}
             except snowflake.connector.errors.Error as exc:
                 return {"rows": [], "rowcount": 0, "status": str(exc)}

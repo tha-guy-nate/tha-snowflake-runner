@@ -13,7 +13,7 @@ from tha_snowflake_runner import Session, SnowflakeError, ThaSnowflake
 
 def _mock_conn(rows=None, rowcount=0):
     conn = MagicMock()
-    conn.cursor.return_value.fetchall.return_value = rows or []
+    conn.cursor.return_value.__iter__.return_value = iter(rows or [])
     conn.cursor.return_value.rowcount = rowcount
     return conn
 
@@ -72,7 +72,7 @@ class TestSessionQuery:
 
     def test_default_replace_on_repeated_calls(self):
         conn = _mock_conn()
-        conn.cursor.return_value.fetchall.side_effect = [[{"X": 1}], [{"X": 2}]]
+        conn.cursor.return_value.__iter__.side_effect = [iter([{"X": 1}]), iter([{"X": 2}])]
         sess = Session(conn)
         sess.query("SELECT 1")
         sess.query("SELECT 2")
@@ -80,9 +80,9 @@ class TestSessionQuery:
 
     def test_accumulate_appends_rows(self):
         conn = _mock_conn()
-        conn.cursor.return_value.fetchall.side_effect = [
-            [{"X": 1}],
-            [{"X": 2}, {"X": 3}],
+        conn.cursor.return_value.__iter__.side_effect = [
+            iter([{"X": 1}]),
+            iter([{"X": 2}, {"X": 3}]),
         ]
         sess = Session(conn, accumulate=True)
         sess.query("SELECT 1")
@@ -91,11 +91,42 @@ class TestSessionQuery:
 
     def test_accumulate_return_value_is_current_query_only(self):
         conn = _mock_conn()
-        conn.cursor.return_value.fetchall.side_effect = [[{"X": 1}], [{"X": 2}]]
+        conn.cursor.return_value.__iter__.side_effect = [iter([{"X": 1}]), iter([{"X": 2}])]
         sess = Session(conn, accumulate=True)
         sess.query("SELECT 1")
         result = sess.query("SELECT 2")
         assert result == {"rows": [{"X": 2}], "rowcount": 1, "status": None}
+
+    def test_desc_none_uses_default_label(self):
+        sess = Session(_mock_conn(rows=[{"X": 1}]))
+        with patch("tha_snowflake_runner.session.tqdm") as mock_tqdm:
+            mock_tqdm.side_effect = lambda it, **kwargs: it
+            sess.query("SELECT 1")
+        assert mock_tqdm.call_args.kwargs["desc"] == "Getting data from Snowflake"
+        assert mock_tqdm.call_args.kwargs["disable"] is False
+
+    def test_desc_set_prefixes_default_label(self):
+        sess = Session(_mock_conn(rows=[{"X": 1}]))
+        with patch("tha_snowflake_runner.session.tqdm") as mock_tqdm:
+            mock_tqdm.side_effect = lambda it, **kwargs: it
+            sess.query("SELECT 1", desc="Step 1 of 7")
+        assert mock_tqdm.call_args.kwargs["desc"] == "Step 1 of 7: Getting data from Snowflake"
+        assert mock_tqdm.call_args.kwargs["disable"] is False
+
+    def test_show_progress_false_disables_even_with_desc(self):
+        sess = Session(_mock_conn(rows=[{"X": 1}]))
+        with patch("tha_snowflake_runner.session.tqdm") as mock_tqdm:
+            mock_tqdm.side_effect = lambda it, **kwargs: it
+            sess.query("SELECT 1", desc="Fetching", show_progress=False)
+        assert mock_tqdm.call_args.kwargs["disable"] is True
+
+    def test_no_result_set_skips_fetch(self):
+        conn = _mock_conn()
+        conn.cursor.return_value.description = None
+        sess = Session(conn)
+        result = sess.query("SELECT 1")
+        assert result == {"rows": [], "rowcount": 0, "status": None}
+        conn.cursor.return_value.__iter__.assert_not_called()
 
     def test_query_error_returns_status_string(self):
         import snowflake.connector.errors
