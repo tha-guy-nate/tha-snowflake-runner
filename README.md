@@ -28,6 +28,12 @@ result = sf.query("SELECT id, name FROM users WHERE active = %s", params=(True,)
 
 # or load SQL from a file
 result = sf.query(file="queries/users.sql", params=(True,))
+
+# prints "Getting data from Snowflake" as a tqdm progress bar while fetching (on by default)
+result = sf.query("SELECT * FROM users")
+
+# desc= prefixes the bar with a step label: "Step 1 of 7: Getting data from Snowflake"
+result = sf.query("SELECT * FROM users", desc="Step 1 of 7")
 ```
 
 ## Connection modes
@@ -111,6 +117,8 @@ result = sf.query("SELECT * FROM orders WHERE id = %s", params=("o1",))
 ```
 
 `sf.rows` always holds the result of the most recent query (thread-local).
+
+A `tqdm` progress bar labeled "Getting data from Snowflake" prints while rows are fetched — on by default. Pass `desc="..."` to prefix it with a step label (e.g. `desc="Step 1 of 7"` → `"Step 1 of 7: Getting data from Snowflake"`). Pass `show_progress=False` to suppress it entirely.
 
 ## Session — multiple queries on one connection
 
@@ -204,7 +212,7 @@ sf = ThaSnowflake(
 | `connection(**kwargs)` | context manager | Open a connection, close it on exit |
 | `session(*, accumulate=False, **kwargs)` | context manager → `Session` | Open a `Session` backed by one connection; closes on exit |
 | `open_session(*, accumulate=False, **kwargs)` | `Session` | Open and return a `Session` without a context manager; caller must call `sess.close()` |
-| `query(sql=None, *, file=None, params, conn, role, warehouse, database, schema)` | `dict` | Execute a SELECT; pass `sql` or `file=` (not both); returns `{"rows", "rowcount", "status"}` |
+| `query(sql=None, *, file=None, params, conn, role, warehouse, database, schema, desc=None, show_progress=True)` | `dict` | Execute a SELECT; pass `sql` or `file=` (not both); returns `{"rows", "rowcount", "status"}`; prints a `tqdm` progress bar ("Getting data from Snowflake") while fetching — `desc=` prefixes it with a step label, `show_progress=False` disables it |
 | `list_profiles()` | `list[str]` | Profile names from `connections_file` (requires Mode 2) |
 
 ### `Session`
@@ -213,7 +221,7 @@ Obtain via `sf.session()`. Not thread-safe — one `Session` per thread.
 
 | Member | Description |
 |--------|-------------|
-| `query(sql=None, *, file=None, params)` | Execute a SELECT on the persistent connection; pass `sql` or `file=` (not both); returns `{"rows", "rowcount", "status"}` |
+| `query(sql=None, *, file=None, params, desc=None, show_progress=True)` | Execute a SELECT on the persistent connection; pass `sql` or `file=` (not both); returns `{"rows", "rowcount", "status"}`; prints a `tqdm` progress bar ("Getting data from Snowflake") while fetching — `desc=` prefixes it with a step label, `show_progress=False` disables it |
 | `rows` | Running result — latest query only when `accumulate=False` (default), all queries combined when `accumulate=True` |
 | `close()` | Close the underlying connection |
 

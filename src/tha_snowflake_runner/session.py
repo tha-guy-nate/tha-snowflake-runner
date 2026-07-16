@@ -4,7 +4,9 @@ import os
 from typing import Any
 
 import snowflake.connector
+from tqdm import tqdm
 
+from tha_snowflake_runner._progress import tqdm_ncols
 from tha_snowflake_runner.errors import SnowflakeError
 
 
@@ -39,10 +41,14 @@ class Session:
         *,
         file: str | None = None,
         params: tuple[Any, ...] | list[Any] | None = None,
+        desc: str | None = None,
+        show_progress: bool = True,
     ) -> dict[str, Any]:
         """Execute a SELECT and return {"rows": list[dict], "rowcount": int, "status": None|str}.
 
         Pass sql as an inline string or file= as a path to a .sql file (not both).
+        Prints a tqdm progress bar while fetching rows; pass desc to prefix it with a step
+        label (e.g. desc="Step 1 of 7"), or show_progress=False to suppress it entirely.
         Sets self.rows. When accumulate=True, appends rows across calls; otherwise replaces.
         status is None on success, or an error string on Snowflake query failure.
         """
@@ -62,7 +68,20 @@ class Session:
         cursor = self._conn.cursor(snowflake.connector.DictCursor)
         try:
             cursor.execute(sql, params or ())
-            rows = cursor.fetchall()
+            fetching = "Getting data from Snowflake"
+            label = f"{desc}: {fetching}" if desc is not None else fetching
+            rows = (
+                list(
+                    tqdm(
+                        cursor,
+                        desc=label,
+                        ncols=tqdm_ncols(),
+                        disable=not show_progress,
+                    )
+                )
+                if cursor.description
+                else []
+            )
         except snowflake.connector.errors.Error as exc:
             status = str(exc)
         finally:

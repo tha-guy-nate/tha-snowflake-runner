@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-16
+### Added
+- `desc` and `show_progress` params on `ThaSnowflake.query()` and `Session.query()` — mirrors `ThaCSV.read`'s progress-bar ergonomic. A `tqdm` bar labeled "Getting data from Snowflake" now prints while rows are fetched, on by default; `desc="..."` prefixes it with a step label (e.g. `desc="Step 1 of 7"` → `"Step 1 of 7: Getting data from Snowflake"`); `show_progress=False` suppresses it entirely.
+### Changed
+- `query()` now iterates the cursor (via `tqdm`) instead of calling `fetchall()` in one shot, so progress can be reported per-row. Return shape is unchanged.
+
 ## [0.2.3] - 2026-07-04
 ### Fixed
 - Added missing `data` to `pyproject.toml` `keywords` to align with the GitHub topic list.
