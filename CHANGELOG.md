@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-08-05
+### Changed
+- Pull in `snowflake-connector-python`'s `secure-local-storage` extra (adds `keyring`), enabling the connector's built-in secure local token cache for `authenticator="externalbrowser"` (Okta SSO) connections — avoids re-prompting for MFA/SSO on every connect on platforms with a supported OS keychain.
+- Raised `cryptography` floor to `>=50.0.0` — `>=48.0.1` was resolving to `49.0.0`, which has a known vulnerability (PYSEC-2026-3552) fixed in `50.0.0`.
+
 ## [0.3.0] - 2026-07-16
 ### Added
 - `desc` and `show_progress` params on `ThaSnowflake.query()` and `Session.query()` — mirrors `ThaCSV.read`'s progress-bar ergonomic. A `tqdm` bar labeled "Getting data from Snowflake" now prints while rows are fetched, on by default; `desc="..."` prefixes it with a step label (e.g. `desc="Step 1 of 7"` → `"Step 1 of 7: Getting data from Snowflake"`); `show_progress=False` suppresses it entirely.
