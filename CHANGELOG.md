@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-08-06
+### Fixed
+- `query()`'s step label (`desc`/"Getting data from Snowflake") is now emitted before `cursor.execute()` instead of after — previously the label only appeared once the query had already finished, since `execute()` blocks with no progress signal of its own. The label now shows immediately when the query kicks off, and the `tqdm` bar still tracks the row-fetch step as before.
+
 ## [0.3.1] - 2026-08-05
 ### Changed
 - Pull in `snowflake-connector-python`'s `secure-local-storage` extra (adds `keyring`), enabling the connector's built-in secure local token cache for `authenticator="externalbrowser"` (Okta SSO) connections — avoids re-prompting for MFA/SSO on every connect on platforms with a supported OS keychain.

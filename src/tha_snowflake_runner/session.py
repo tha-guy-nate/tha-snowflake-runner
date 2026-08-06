@@ -67,9 +67,10 @@ class Session:
         status: str | None = None
         cursor = self._conn.cursor(snowflake.connector.DictCursor)
         try:
-            cursor.execute(sql, params or ())
             fetching = "Getting data from Snowflake"
             label = f"{desc}: {fetching}" if desc is not None else fetching
+            self._status(label)
+            cursor.execute(sql, params or ())
             rows = (
                 list(
                     tqdm(
