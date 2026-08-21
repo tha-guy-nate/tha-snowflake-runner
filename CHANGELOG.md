@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-08-21
+### Fixed
+- Re-locked transitive `pip` (pulled in via `deptry` -> `pip-api`) from `26.1.2` to `26.2.1`, resolving a known CVE (PYSEC-2026-3721) flagged by `pip-audit`.
+
 ## [0.3.2] - 2026-08-06
 ### Fixed
 - `query()`'s step label (`desc`/"Getting data from Snowflake") is now emitted before `cursor.execute()` instead of after — previously the label only appeared once the query had already finished, since `execute()` blocks with no progress signal of its own. The label now shows immediately when the query kicks off, and the `tqdm` bar still tracks the row-fetch step as before.
