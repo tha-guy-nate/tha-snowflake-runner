@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-09-07
+### Fixed
+- Raised `snowflake-connector-python` floor to `>=4.7.1` — `>=3.6` was resolving to `4.6.0`, which has a known vulnerability (CVE-2026-15925: improper TLS hostname verification that could let an on-path attacker bypass certificate hostname validation) fixed in `4.7.1`. Flagged by `pip-audit`.
+
 ## [0.3.3] - 2026-08-21
 ### Fixed
 - Re-locked transitive `pip` (pulled in via `deptry` -> `pip-api`) from `26.1.2` to `26.2.1`, resolving a known CVE (PYSEC-2026-3721) flagged by `pip-audit`.
