@@ -97,28 +97,23 @@ class TestSessionQuery:
         result = sess.query("SELECT 2")
         assert result == {"rows": [{"X": 2}], "rowcount": 1, "status": None}
 
-    def test_desc_none_uses_default_label(self):
-        sess = Session(_mock_conn(rows=[{"X": 1}]))
-        with patch("tha_snowflake_runner.session.tqdm") as mock_tqdm:
-            mock_tqdm.side_effect = lambda it, **kwargs: it
-            sess.query("SELECT 1")
-        assert mock_tqdm.call_args.kwargs["desc"] == "Getting data from Snowflake"
-        assert mock_tqdm.call_args.kwargs["disable"] is False
+    def test_desc_none_emits_default_message(self):
+        messages: list[str] = []
+        sess = Session(_mock_conn(rows=[{"X": 1}]), status_cb=messages.append)
+        sess.query("SELECT 1")
+        assert messages == ["Getting data from Snowflake ..."]
 
-    def test_desc_set_prefixes_default_label(self):
-        sess = Session(_mock_conn(rows=[{"X": 1}]))
-        with patch("tha_snowflake_runner.session.tqdm") as mock_tqdm:
-            mock_tqdm.side_effect = lambda it, **kwargs: it
-            sess.query("SELECT 1", desc="Step 1 of 7")
-        assert mock_tqdm.call_args.kwargs["desc"] == "Step 1 of 7: Getting data from Snowflake"
-        assert mock_tqdm.call_args.kwargs["disable"] is False
+    def test_desc_is_used_verbatim_as_message(self):
+        messages: list[str] = []
+        sess = Session(_mock_conn(rows=[{"X": 1}]), status_cb=messages.append)
+        sess.query("SELECT 1", desc="[2/7]: Getting users")
+        assert messages == ["[2/7]: Getting users"]
 
-    def test_show_progress_false_disables_even_with_desc(self):
-        sess = Session(_mock_conn(rows=[{"X": 1}]))
-        with patch("tha_snowflake_runner.session.tqdm") as mock_tqdm:
-            mock_tqdm.side_effect = lambda it, **kwargs: it
-            sess.query("SELECT 1", desc="Fetching", show_progress=False)
-        assert mock_tqdm.call_args.kwargs["disable"] is True
+    def test_show_progress_false_suppresses_message_even_with_desc(self):
+        messages: list[str] = []
+        sess = Session(_mock_conn(rows=[{"X": 1}]), status_cb=messages.append)
+        sess.query("SELECT 1", desc="Fetching", show_progress=False)
+        assert messages == []
 
     def test_no_result_set_skips_fetch(self):
         conn = _mock_conn()

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-26
+### Changed
+- **Breaking:** `query(desc=...)` on `ThaSnowflake` and `Session` is now the whole status message, used verbatim, instead of a prefix that had `": Getting data from Snowflake"` appended. Callers who passed a step label like `desc="[2/7]"` should now pass the full text (e.g. `desc="[2/7]: Getting data from Snowflake"`). With `desc=None` the default message is now `"Getting data from Snowflake ..."`.
+- The tqdm progress bar is gone. `cursor.execute()` blocks for the whole query and the bar only wrapped the row iteration afterwards, so it printed a meaningless `2819it [00:00, 4616it/s]` after the wait was already over. The message is now sent through `status_cb` *before* the query runs. `show_progress=False` still works and suppresses the message; it is accepted for compatibility.
+- Removed the `tqdm` dependency and the internal `_progress` module.
+
+### Fixed
+- `__version__` was `0.3.3` while `pyproject.toml` was `0.3.4`; resynced.
+
 ## [0.3.4] - 2026-09-07
 ### Fixed
 - Raised `snowflake-connector-python` floor to `>=4.7.1` — `>=3.6` was resolving to `4.6.0`, which has a known vulnerability (CVE-2026-15925: improper TLS hostname verification that could let an on-path attacker bypass certificate hostname validation) fixed in `4.7.1`. Flagged by `pip-audit`.

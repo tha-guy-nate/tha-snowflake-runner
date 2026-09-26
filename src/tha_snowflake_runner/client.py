@@ -7,13 +7,11 @@ from collections.abc import Generator
 from typing import Any
 
 import snowflake.connector
-from tqdm import tqdm
 
 from tha_snowflake_runner._keys import resolve_private_key
-from tha_snowflake_runner._progress import tqdm_ncols
 from tha_snowflake_runner.errors import SnowflakeError
 from tha_snowflake_runner.profiles import _load_all_profiles
-from tha_snowflake_runner.session import Session
+from tha_snowflake_runner.session import _DEFAULT_QUERY_LABEL, Session
 
 
 @contextlib.contextmanager
@@ -292,9 +290,9 @@ class ThaSnowflake:
 
         Pass sql as an inline string or file= as a path to a .sql file (not both).
         Pass conn to reuse an existing connection; otherwise a new one is opened and closed.
-        Prints a tqdm progress bar while fetching rows; pass desc to prefix it with a step
-        label (e.g. desc="Step 1 of 7"), or show_progress=False to suppress it entirely.
-        Sets self.rows.
+        Emits a "Getting data from Snowflake ..." message through status_cb before the query runs;
+        pass desc to use your own text as the whole message (e.g. desc="[1/7]: Getting users"),
+        or show_progress=False to suppress it. Sets self.rows.
         """
         if sql is not None and file is not None:
             raise SnowflakeError("Provide sql or file, not both")
@@ -310,22 +308,10 @@ class ThaSnowflake:
         def _run(c: Any) -> dict[str, Any]:
             cursor = c.cursor(snowflake.connector.DictCursor)
             try:
-                fetching = "Getting data from Snowflake"
-                label = f"{desc}: {fetching}" if desc is not None else fetching
-                self._status(label)
+                if show_progress:
+                    self._status(desc if desc is not None else _DEFAULT_QUERY_LABEL)
                 cursor.execute(sql, params or ())
-                rows: list[dict[str, Any]] = (
-                    list(
-                        tqdm(
-                            cursor,
-                            desc=label,
-                            ncols=tqdm_ncols(),
-                            disable=not show_progress,
-                        )
-                    )
-                    if cursor.description
-                    else []
-                )
+                rows: list[dict[str, Any]] = list(cursor) if cursor.description else []
                 return {"rows": rows, "rowcount": len(rows), "status": None}
             except snowflake.connector.errors.Error as exc:
                 return {"rows": [], "rowcount": 0, "status": str(exc)}
