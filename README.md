@@ -29,11 +29,11 @@ result = sf.query("SELECT id, name FROM users WHERE active = %s", params=(True,)
 # or load SQL from a file
 result = sf.query(file="queries/users.sql", params=(True,))
 
-# prints "Getting data from Snowflake" as a tqdm progress bar while fetching (on by default)
+# sends "Getting data from Snowflake ..." to status_cb before the query runs (on by default)
 result = sf.query("SELECT * FROM users")
 
-# desc= prefixes the bar with a step label: "Step 1 of 7: Getting data from Snowflake"
-result = sf.query("SELECT * FROM users", desc="Step 1 of 7")
+# desc= replaces the whole message: "[1/7]: Getting users"
+result = sf.query("SELECT * FROM users", desc="[1/7]: Getting users")
 ```
 
 ## Connection modes
@@ -118,7 +118,7 @@ result = sf.query("SELECT * FROM orders WHERE id = %s", params=("o1",))
 
 `sf.rows` always holds the result of the most recent query (thread-local).
 
-A `tqdm` progress bar labeled "Getting data from Snowflake" prints while rows are fetched — on by default. Pass `desc="..."` to prefix it with a step label (e.g. `desc="Step 1 of 7"` → `"Step 1 of 7: Getting data from Snowflake"`). Pass `show_progress=False` to suppress it entirely.
+Before the query runs, `"Getting data from Snowflake ..."` is sent to `status_cb` (nothing is printed if you didn't pass one) — on by default. There is no progress bar: the wait is in the query itself, so a per-row bar only appeared after the work was done. Pass `desc="..."` to use your own text as the whole message (e.g. `desc="[1/7]: Getting users"`). Pass `show_progress=False` to suppress it.
 
 ## Session — multiple queries on one connection
 
@@ -212,7 +212,7 @@ sf = ThaSnowflake(
 | `connection(**kwargs)` | context manager | Open a connection, close it on exit |
 | `session(*, accumulate=False, **kwargs)` | context manager → `Session` | Open a `Session` backed by one connection; closes on exit |
 | `open_session(*, accumulate=False, **kwargs)` | `Session` | Open and return a `Session` without a context manager; caller must call `sess.close()` |
-| `query(sql=None, *, file=None, params, conn, role, warehouse, database, schema, desc=None, show_progress=True)` | `dict` | Execute a SELECT; pass `sql` or `file=` (not both); returns `{"rows", "rowcount", "status"}`; prints a `tqdm` progress bar ("Getting data from Snowflake") while fetching — `desc=` prefixes it with a step label, `show_progress=False` disables it |
+| `query(sql=None, *, file=None, params, conn, role, warehouse, database, schema, desc=None, show_progress=True)` | `dict` | Execute a SELECT; pass `sql` or `file=` (not both); returns `{"rows", "rowcount", "status"}`; sends "Getting data from Snowflake ..." to `status_cb` before the query runs — `desc=` replaces the whole message, `show_progress=False` suppresses it |
 | `list_profiles()` | `list[str]` | Profile names from `connections_file` (requires Mode 2) |
 
 ### `Session`
@@ -221,7 +221,7 @@ Obtain via `sf.session()`. Not thread-safe — one `Session` per thread.
 
 | Member | Description |
 |--------|-------------|
-| `query(sql=None, *, file=None, params, desc=None, show_progress=True)` | Execute a SELECT on the persistent connection; pass `sql` or `file=` (not both); returns `{"rows", "rowcount", "status"}`; prints a `tqdm` progress bar ("Getting data from Snowflake") while fetching — `desc=` prefixes it with a step label, `show_progress=False` disables it |
+| `query(sql=None, *, file=None, params, desc=None, show_progress=True)` | Execute a SELECT on the persistent connection; pass `sql` or `file=` (not both); returns `{"rows", "rowcount", "status"}`; sends "Getting data from Snowflake ..." to `status_cb` before the query runs — `desc=` replaces the whole message, `show_progress=False` suppresses it |
 | `rows` | Running result — latest query only when `accumulate=False` (default), all queries combined when `accumulate=True` |
 | `close()` | Close the underlying connection |
 

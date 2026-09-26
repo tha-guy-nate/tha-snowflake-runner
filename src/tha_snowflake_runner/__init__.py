@@ -5,7 +5,7 @@ from tha_snowflake_runner.errors import SnowflakeError
 from tha_snowflake_runner.profiles import list_profiles
 from tha_snowflake_runner.session import Session
 
-__version__ = "0.3.3"
+__version__ = "0.4.0"
 __all__ = [
     "Session",
     "SnowflakeError",

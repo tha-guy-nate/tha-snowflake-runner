@@ -612,33 +612,28 @@ class TestQuery:
         with pytest.raises(SnowflakeError, match="not both"):
             sf.query("SELECT 1", file="q.sql")
 
-    def test_desc_none_uses_default_label(self):
-        sf = ThaSnowflake()
-        with patch("tha_snowflake_runner.client.tqdm") as mock_tqdm:
-            mock_tqdm.side_effect = lambda it, **kwargs: it
-            sf.query("SELECT 1", conn=self._conn_with_rows([{"N": 1}]))
-        assert mock_tqdm.call_args.kwargs["desc"] == "Getting data from Snowflake"
-        assert mock_tqdm.call_args.kwargs["disable"] is False
+    def test_desc_none_emits_default_message(self):
+        messages: list[str] = []
+        sf = ThaSnowflake(status_cb=messages.append)
+        sf.query("SELECT 1", conn=self._conn_with_rows([{"N": 1}]))
+        assert messages == ["Getting data from Snowflake ..."]
 
-    def test_desc_set_prefixes_default_label(self):
-        sf = ThaSnowflake()
-        with patch("tha_snowflake_runner.client.tqdm") as mock_tqdm:
-            mock_tqdm.side_effect = lambda it, **kwargs: it
-            sf.query("SELECT 1", desc="Step 1 of 7", conn=self._conn_with_rows([{"N": 1}]))
-        assert mock_tqdm.call_args.kwargs["desc"] == "Step 1 of 7: Getting data from Snowflake"
-        assert mock_tqdm.call_args.kwargs["disable"] is False
+    def test_desc_is_used_verbatim_as_message(self):
+        messages: list[str] = []
+        sf = ThaSnowflake(status_cb=messages.append)
+        sf.query("SELECT 1", desc="[2/7]: Getting users", conn=self._conn_with_rows([{"N": 1}]))
+        assert messages == ["[2/7]: Getting users"]
 
-    def test_show_progress_false_disables_even_with_desc(self):
-        sf = ThaSnowflake()
-        with patch("tha_snowflake_runner.client.tqdm") as mock_tqdm:
-            mock_tqdm.side_effect = lambda it, **kwargs: it
-            sf.query(
-                "SELECT 1",
-                desc="Fetching",
-                show_progress=False,
-                conn=self._conn_with_rows([{"N": 1}]),
-            )
-        assert mock_tqdm.call_args.kwargs["disable"] is True
+    def test_show_progress_false_suppresses_message_even_with_desc(self):
+        messages: list[str] = []
+        sf = ThaSnowflake(status_cb=messages.append)
+        sf.query(
+            "SELECT 1",
+            desc="Fetching",
+            show_progress=False,
+            conn=self._conn_with_rows([{"N": 1}]),
+        )
+        assert messages == []
 
     def test_no_result_set_skips_fetch(self):
         sf = ThaSnowflake()

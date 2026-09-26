@@ -4,10 +4,10 @@ import os
 from typing import Any
 
 import snowflake.connector
-from tqdm import tqdm
 
-from tha_snowflake_runner._progress import tqdm_ncols
 from tha_snowflake_runner.errors import SnowflakeError
+
+_DEFAULT_QUERY_LABEL = "Getting data from Snowflake ..."
 
 
 class Session:
@@ -47,8 +47,9 @@ class Session:
         """Execute a SELECT and return {"rows": list[dict], "rowcount": int, "status": None|str}.
 
         Pass sql as an inline string or file= as a path to a .sql file (not both).
-        Prints a tqdm progress bar while fetching rows; pass desc to prefix it with a step
-        label (e.g. desc="Step 1 of 7"), or show_progress=False to suppress it entirely.
+        Emits a "Getting data from Snowflake ..." message through status_cb before the query runs;
+        pass desc to use your own text as the whole message (e.g. desc="[1/7]: Getting users"),
+        or show_progress=False to suppress it.
         Sets self.rows. When accumulate=True, appends rows across calls; otherwise replaces.
         status is None on success, or an error string on Snowflake query failure.
         """
@@ -67,22 +68,10 @@ class Session:
         status: str | None = None
         cursor = self._conn.cursor(snowflake.connector.DictCursor)
         try:
-            fetching = "Getting data from Snowflake"
-            label = f"{desc}: {fetching}" if desc is not None else fetching
-            self._status(label)
+            if show_progress:
+                self._status(desc if desc is not None else _DEFAULT_QUERY_LABEL)
             cursor.execute(sql, params or ())
-            rows = (
-                list(
-                    tqdm(
-                        cursor,
-                        desc=label,
-                        ncols=tqdm_ncols(),
-                        disable=not show_progress,
-                    )
-                )
-                if cursor.description
-                else []
-            )
+            rows = list(cursor) if cursor.description else []
         except snowflake.connector.errors.Error as exc:
             status = str(exc)
         finally:
