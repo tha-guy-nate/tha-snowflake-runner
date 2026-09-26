@@ -618,10 +618,24 @@ class TestQuery:
         sf.query("SELECT 1", conn=self._conn_with_rows([{"N": 1}]))
         assert messages == ["Getting data from Snowflake ..."]
 
-    def test_desc_is_used_verbatim_as_message(self):
+    def test_desc_is_step_prefix_before_default_text(self):
         messages: list[str] = []
         sf = ThaSnowflake(status_cb=messages.append)
-        sf.query("SELECT 1", desc="[2/7]: Getting users", conn=self._conn_with_rows([{"N": 1}]))
+        sf.query("SELECT 1", desc="[2/7]", conn=self._conn_with_rows([{"N": 1}]))
+        assert messages == ["[2/7]: Getting data from Snowflake ..."]
+
+    def test_label_replaces_default_text(self):
+        messages: list[str] = []
+        sf = ThaSnowflake(status_cb=messages.append)
+        sf.query("SELECT 1", label="Getting users", conn=self._conn_with_rows([{"N": 1}]))
+        assert messages == ["Getting users"]
+
+    def test_desc_and_label_combine(self):
+        messages: list[str] = []
+        sf = ThaSnowflake(status_cb=messages.append)
+        sf.query(
+            "SELECT 1", desc="[2/7]", label="Getting users", conn=self._conn_with_rows([{"N": 1}])
+        )
         assert messages == ["[2/7]: Getting users"]
 
     def test_show_progress_false_suppresses_message_even_with_desc(self):

@@ -11,7 +11,7 @@ import snowflake.connector
 from tha_snowflake_runner._keys import resolve_private_key
 from tha_snowflake_runner.errors import SnowflakeError
 from tha_snowflake_runner.profiles import _load_all_profiles
-from tha_snowflake_runner.session import _DEFAULT_QUERY_LABEL, Session
+from tha_snowflake_runner.session import Session, _compose_label
 
 
 @contextlib.contextmanager
@@ -284,15 +284,17 @@ class ThaSnowflake:
         database: str | None = None,
         schema: str | None = None,
         desc: str | None = None,
+        label: str | None = None,
         show_progress: bool = True,
     ) -> dict[str, Any]:
         """Execute a SELECT and return {"rows": list[dict], "rowcount": int, "status": None|str}.
 
         Pass sql as an inline string or file= as a path to a .sql file (not both).
         Pass conn to reuse an existing connection; otherwise a new one is opened and closed.
-        Emits a "Getting data from Snowflake ..." message through status_cb before the query runs;
-        pass desc to use your own text as the whole message (e.g. desc="[1/7]: Getting users"),
-        or show_progress=False to suppress it. Sets self.rows.
+        Emits a "Getting data from Snowflake ..." message through status_cb before the query runs.
+        desc is a step prefix put at the front (desc="[1/7]" -> "[1/7]: Getting data from ...");
+        label replaces the default text; show_progress=False suppresses the message.
+        Sets self.rows.
         """
         if sql is not None and file is not None:
             raise SnowflakeError("Provide sql or file, not both")
@@ -309,7 +311,7 @@ class ThaSnowflake:
             cursor = c.cursor(snowflake.connector.DictCursor)
             try:
                 if show_progress:
-                    self._status(desc if desc is not None else _DEFAULT_QUERY_LABEL)
+                    self._status(_compose_label(desc, label))
                 cursor.execute(sql, params or ())
                 rows: list[dict[str, Any]] = list(cursor) if cursor.description else []
                 return {"rows": rows, "rowcount": len(rows), "status": None}
