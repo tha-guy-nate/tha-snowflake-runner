@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-26
+### Added
+- `query()` on `ThaSnowflake` and `Session` takes a keyword-only `label` that replaces the default status text (`"Getting data from Snowflake ..."`). `desc="[2/7]", label="Getting users"` renders `"[2/7]: Getting users"`.
+
+### Changed
+- **Reverts part of 0.4.0:** `desc` is a step prefix again, asserted at the front (`desc="[2/7]"` → `"[2/7]: Getting data from Snowflake ..."`), instead of the whole message. Callers that adopted 0.4.0 by passing full text (`desc="[2/7]: Getting data from Snowflake"`) will now get the default text appended; pass `desc="[2/7]"` and, if the wording should differ, `label=`. The pre-query `status_cb` message and the removal of tqdm from 0.4.0 are unchanged.
+- `__version__` is now read from the installed package metadata (`importlib.metadata`) instead of a hardcoded string, so `pyproject.toml` is the only place the version is bumped.
+
 ## [0.4.0] - 2026-09-26
 ### Changed
 - **Breaking:** `query(desc=...)` on `ThaSnowflake` and `Session` is now the whole status message, used verbatim, instead of a prefix that had `": Getting data from Snowflake"` appended. Callers who passed a step label like `desc="[2/7]"` should now pass the full text (e.g. `desc="[2/7]: Getting data from Snowflake"`). With `desc=None` the default message is now `"Getting data from Snowflake ..."`.
